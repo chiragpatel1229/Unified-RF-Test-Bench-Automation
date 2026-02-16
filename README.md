@@ -76,13 +76,28 @@ Implemented robust input validation to prevent hardware crashes or invalid datas
 
 ## 📊 Results & Validation
 
-The system was validated against FEKO Simulation Software:
+The system was rigorously validated against FEKO Simulation Software using complex antenna arrays to ensure high-fidelity directional analysis.
 
-- Test Subject: Monopole Antenna at 1.903 GHz
-- Simulation Prediction: -14.1 dB Reflection Coefficient
-- Physical Testbed Result: -22.06 dB (Verified via PNA)
+### 1. Complex Array Validation (Monopole Antenna Array)
 
-Outcome: The system successfully characterized the antenna's circular radiation pattern, confirming the stability of the automated control loop.
+- Test Subject: Dual Monopole Antenna Array at 4.8 GHz.
+
+- Simulation vs. Physical Data:
+  - FEKO Prediction: Reflection Coefficient of -24.02 dB with a VSWR of 1.13.
+  - Physical Testbed: Validated the 65.82° phase shift required for coherent beamforming.
+
+- Outcome: The system successfully characterized the beamforming capabilities, matching the simulated gain drops at specific angular nulls (0° and 180°).
+
+### 2. Directional Beam Validation (5-Element Yagi-Uda)
+
+- Test Subject: 5-Element Yagi-Uda Antenna at 2.418 GHz.
+
+- Impedance Matching:
+  - Smith Chart Analysis: Measured varying impedance of 51.16 $\Omega$ (Physical) vs. 50.71 $\Omega$ (Simulated).
+  - Return Loss: Achieved a physical Return Loss (S11) of -10.91 dB, confirming efficient power transfer.
+
+- Gain Ratio Analysis: The automated system calculated a Min/Max Gain Ratio of -39 dB, closely mirroring the FEKO simulation ratio of -36 dB, proving the system's dynamic range accuracy.
+
 
 ## 📂 Usage
 
