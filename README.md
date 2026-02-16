@@ -1,26 +1,105 @@
-# High-frequency Antenna Directional Characteristics Testbed
+# 📡 Automated RF Radiation Pattern Measurement System
 
-This repository contains the software developed for the comprehensive study of the directional characteristics of various antennas/radar systems. The software is designed to work in conjunction with a testbed environment, providing valuable insights into the performance of antennas in communication systems.
+A unified, MATLAB-based Automated Test Equipment (ATE) solution for high-fidelity antenna characterization, reducing manual calibration time and ensuring high-resolution directional analysis.
 
-## Testbed Environment
+## 📖 Executive Summary
 
-The testbed environment is equipped with advanced hardware systems that aid in the study of the directional characteristics of antennas. The hardware components include:
+This project replaces legacy manual testing workflows with a turnkey "One-Button" automation system. It integrates motion control (stepper motors) with high-frequency RF instrumentation (Signal Analyzers/Generators) into a single synchronous loop.
 
-- Keysight EXA N9010A signal analyser (9 kHz to 7 GHz)
-- Keysight MXG N5182A signal generator (100 kHz to 6 GHz)
-- Keysight PNA N5222A network analyzer
-- Arcus Technology stepper motor model DMX-J-SA-17
-- Hyper LOG 4060 Broadband antenna
-- Various types of antennas with their own frequency ranges
+The system was architected to validate Monopole, Dipole, and Yagi-Uda antenna arrays, providing real-time polar plotting and automatic data logging. It bridges the gap between FEKO simulations and physical RF measurements.
 
-## Software Development
+## ⚙️ System Architecture & Tech Stack
 
-The software is developed using MATLAB programming language that supports the VISA-IP address through an Ethernet connection as an Application Programming Interface (API). This allows for script writing and code generation that can control the hardware components and collect data from the antennas.
+The solution is built on a modular architecture separating the GUI Layer, Business Logic, and Hardware Abstraction Layer (HAL).
 
-## Objective
+- Core Language: MATLAB (Object-Oriented Programming)
+- GUI Framework: MATLAB App Designer
+- Instrument Communication:
+  - Keysight Stack: TCP/IP (Ethernet) via VISA protocol / SCPI commands
+- Motion Control: USB Serial communication via custom wrapper
+- Data Serialization: Automated export to .xlsx for post-processing
 
-The primary objective of this software is to provide a tool for investigating the directional characteristics of antennas. It works in conjunction with FEKO simulation software and antenna analysis systems to provide useful information about the performance of antennas in communication systems. The software compares simulation results with actual practical results, thereby confirming the accuracy of the simulation and contributing to the development of the field of communication technology.
+## 🛠️ Hardware Ecosystem
 
-Please refer to the individual script for more detailed information on the setup, usage, and contribution guidelines.
+The software orchestrates a complex hardware-in-the-loop (HiL) setup:
+
+```
+|-------------------|------------------------|----------------------------------------------|-------------------|
+| Device            | Model                  | Role                                         | Communication     |
+|-------------------|------------------------|----------------------------------------------|-------------------|
+| Signal Analyzer   | Keysight EXA N9010A    | Peak Power & Freq. Search (9 kHz - 7 GHz)    | Ethernet (LXI)    |
+| Signal Generator  | Keysight MXG N5182A    | Ref. Signal Injection (100 kHz - 6 GHz)      | Ethernet (LXI)    |
+| Network Analyzer  | Keysight PNA N5222A    | S-Parameter & Impedance Matching             | Ethernet (LXI)    |
+| Stepper Motor     | Arcus DMX-J-SA-17      | Precision DUT Rotation                       | USB / ASCII       |
+```
+
+## 🚀 Key Engineering Challenges & Solutions
+
+### 1. Custom Driver Wrapper (MyArcus Class)
+
+The Arcus motor firmware required proprietary ASCII text commands via a legacy executable (GUI_CMD.exe).
+
+Problem: MATLAB could not natively "speak" to the motor firmware.
+
+Solution: Developed a custom MATLAB class MyArcus that acts as a wrapper. It translates high-level method calls (e.g., Motor.PositionTo(90)) into the specific ASCII strings required by the firmware, enabling seamless object-oriented control.
+
+### 2. Latency Compensation Algorithm
+
+To ensure data integrity, the system must wait for mechanical vibration to settle and for the VISA bus to handshake before taking a measurement.
+
+Analysis: I developed a stress-test script to measure the "Ping-to-Power-Read" time, isolating a 30ms (0.03s) hardware communication lag.
+
+The Formula: I derived the exact Settlement Time required per step to avoid measuring noise:
+
+```
+matlab
+
+% Derived Formula for System Latency
+Total_Time = ((MicroSteps / Pulse_Rate) * Gear_Ratio) + Comm_Latency + Struct_Settling;
+
+% Result: 0.113 seconds delay strictly enforced per measurement step.
+```
+### 3. High-Precision Mechanical Resolution
+
+Standard stepper motor resolution (1.8°) was insufficient for high-fidelity RF profiling.
+
+Optimization: Engineered a 5:1 gear ratio system (16-tooth motor gear / 80-tooth mount gear).
+
+Impact: Improved angular resolution from 1.8° to 0.36°, allowing for sub-degree directional accuracy.
+
+### 4. "Poka-Yoke" Error Handling
+
+Implemented robust input validation to prevent hardware crashes or invalid datasets:
+
+- Geometry Check: Validates if Step_Size is a factor of 360. If not (e.g., 7°), the algorithm calculates and suggests the nearest valid resolution.
+- Safety Interlock: Checks RF_Output state before initiating motion to prevent "ghost" scans.
+
+## 📊 Results & Validation
+
+The system was validated against FEKO Simulation Software:
+
+- Test Subject: Monopole Antenna at 1.903 GHz
+- Simulation Prediction: -14.1 dB Reflection Coefficient
+- Physical Testbed Result: -22.06 dB (Verified via PNA)
+
+Outcome: The system successfully characterized the antenna's circular radiation pattern, confirming the stability of the automated control loop.
+
+## 📂 Usage
+
+- Connect: Ensure all instruments (MXG, EXA, Arcus) are connected via Ethernet/USB.
+- Launch: Run the Antenna_App.mlapp in MATLAB.
+- Configure: Set Start Freq, Stop Freq, and Step Size (e.g., 5°).
+- Run: Click "Start Auto Measurement". The system will:
+  - Validate inputs.
+  - Auto-home the motor.
+  - Execute the scan loop (Move to Stabilize 0.113s to Measure).
+  - Generate a Polar Plot in real-time.
+  - Export data to Excel.
+
+## 👨‍💻 Author
+
+Chirag Patel  
+Specialist in Test Automation & Hardware-in-the-Loop (HiL) Systems
+
 
 ![GUI](GUI.png)
